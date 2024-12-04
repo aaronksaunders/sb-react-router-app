@@ -97,16 +97,40 @@ export default function Register({ actionData }: Route.ComponentProps) {
       <Form method="post" className="mt-6 ">
         <div className="flex flex-col gap-2">
           <div className="flex flex-row">
-            <label className="min-w-24 ">Username:</label>
-            <input className="flex-1" type="text" name="username" />
+            <label htmlFor="username" className="min-w-24 ">
+              Username:
+            </label>
+            <input
+              id="username"
+              className="flex-1"
+              type="text"
+              name="username"
+              placeholder="Enter your username"
+            />
           </div>
           <div className="flex flex-row">
-            <label className="min-w-24 ">Email:</label>
-            <input className="flex-1" type="email" name="email" />
+            <label htmlFor="email" className="min-w-24 ">
+              Email:
+            </label>
+            <input
+              id="email"
+              className="flex-1"
+              type="email"
+              name="email"
+              placeholder="Enter your email"
+            />
           </div>
           <div className="flex flex-row">
-            <label className="min-w-24 ">Password:</label>
-            <input className="flex-1" type="password" name="password" />
+            <label htmlFor="password" className="min-w-24 ">
+              Password:
+            </label>
+            <input
+              id="password"
+              className="flex-1"
+              type="password"
+              name="password"
+              placeholder="Enter your password"
+            />
           </div>
           <div className="flex flex-row-reverse mt-4 gap-4">
             <button
