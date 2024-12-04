@@ -89,7 +89,9 @@ export async function action({ request }: Route.ActionArgs) {
  * @returns {JSX.Element} The rendered registration form component.
  */
 export default function Register({ actionData }: Route.ComponentProps) {
-  const error = (actionData as { error: string | null })?.error;
+  const error = actionData
+    ? (actionData as { error: string | null })?.error
+    : null;
 
   return (
     <div className="p-8 min-w-3/4 w-[500px] mx-auto">

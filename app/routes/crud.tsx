@@ -33,28 +33,46 @@ export const action = async ({ request }: Route.ActionArgs) => {
     const formData = await request.formData();
     const actionType = formData.get("actionType");
 
+    console.log("Action Type:", actionType); // Debugging log
+
     if (actionType === "addItem") {
       const name = formData.get("name");
       const description = formData.get("description");
-      const { data, error } = await sbServerClient.from("items").insert({
-        name,
-        description,
-      });
-      return { data, error };
+      console.log("Adding Item:", { name, description }); // Debugging log
+
+      const { data, error } = await sbServerClient
+        .from("items")
+        .insert({
+          name,
+          description,
+        })
+        .select("*");
+
+      if (error) {
+        console.error("Error adding item:", error); // Debugging log
+        return { error: error.message };
+      }
+
+      return { data: data?.length > 0 ? data[0] : null };
     }
 
     if (actionType === "editItem") {
       const id = formData.get("id");
       const name = formData.get("name");
       const description = formData.get("description");
+
       const { data, error } = await sbServerClient
         .from("items")
-        .update({
-          name,
-          description,
-        })
-        .eq("id", id);
-      return { data, error };
+        .update({ name, description })
+        .eq("id", id)
+        .select("*");
+
+      if (error) {
+        console.error("Error editing item:", error); // Debugging log
+        return { error: error.message };
+      }
+
+      return { data: data?.length > 0 ? data[0] : null };
     }
 
     if (actionType === "deleteItem") {
@@ -63,11 +81,18 @@ export const action = async ({ request }: Route.ActionArgs) => {
         .from("items")
         .delete()
         .eq("id", id);
-      return { data, error };
+
+      if (error) {
+        console.error("Error deleting item:", error); // Debugging log
+        return { error: error.message };
+      }
+
+      return { data: null };
     }
 
     return { data: null, error: "Invalid action type" };
   } catch (error) {
+    console.error("An error occurred:", error); // Debugging log
     return { data: null, error: "An error occurred" };
   }
 };
@@ -86,29 +111,35 @@ export default function Crud({ loaderData, actionData }: Route.ComponentProps) {
   const items = loaderData?.items;
   const error = (actionData as { error: string | null })?.error;
 
-  // State to manage the item being edited
-  const [editingItem, setEditingItem] = useState<{
+  // State to manage the current item being edited or created
+  const [currentItem, setCurrentItem] = useState<{
     id: number;
     name: string;
     description: string;
   } | null>(null);
 
+  // State to determine if we are in edit mode
+  const [isEditing, setIsEditing] = useState(false);
+
   // Effect to reset the form when actionData changes
   useEffect(() => {
     if (actionData && !actionData.error) {
-      // Reset the editing item if the action was successful
-      setEditingItem(null);
+      // Reset the current item if the action was successful
+      setCurrentItem(null);
+      setIsEditing(false); // Reset edit mode
     }
   }, [actionData]);
 
   // Function to handle edit button click
   const handleEditClick = (item: any) => {
-    setEditingItem(item);
+    setCurrentItem(item);
+    setIsEditing(true); // Set edit mode
   };
 
   // Function to handle cancel edit
   const handleCancelEdit = () => {
-    setEditingItem(null);
+    setCurrentItem(null);
+    setIsEditing(false); // Reset edit mode
   };
 
   return (
@@ -129,21 +160,24 @@ export default function Crud({ loaderData, actionData }: Route.ComponentProps) {
             <input
               type="hidden"
               name="actionType"
-              value={editingItem ? "editItem" : "addItem"}
+              value={isEditing ? "editItem" : "addItem"}
             />
-            {editingItem && (
-              <input type="hidden" name="id" value={editingItem.id} />
+            {isEditing && (
+              <input type="hidden" name="id" value={currentItem?.id} />
             )}
             <div className="flex flex-col gap-2 w-[300px]">
               <input
                 type="text"
                 name="name"
                 placeholder="Name"
-                value={editingItem ? editingItem.name : ""}
+                value={currentItem ? currentItem.name : ""}
                 onChange={(e) => {
-                  if (editingItem) {
-                    setEditingItem({ ...editingItem, name: e.target.value });
-                  }
+                  const newName = e.target.value;
+                  setCurrentItem((prev) => ({
+                    id: prev ? prev.id : 0, // Keep the existing id if editing, otherwise set to 0
+                    name: newName,
+                    description: prev ? prev.description : "", // Maintain previous description if editing
+                  }));
                 }}
                 className="border border-gray-300 p-1 rounded-md mr-2 flex-1"
                 required
@@ -152,14 +186,14 @@ export default function Crud({ loaderData, actionData }: Route.ComponentProps) {
                 rows={3}
                 name="description"
                 placeholder="Description"
-                value={editingItem ? editingItem.description : ""}
+                value={currentItem ? currentItem.description : ""}
                 onChange={(e) => {
-                  if (editingItem) {
-                    setEditingItem({
-                      ...editingItem,
-                      description: e.target.value,
-                    });
-                  }
+                  const newDescription = e.target.value;
+                  setCurrentItem((prev) => ({
+                    id: prev ? prev.id : 0, // Keep the existing id if editing, otherwise set to 0
+                    name: prev ? prev.name : "", // Maintain previous name if editing
+                    description: newDescription,
+                  }));
                 }}
                 className="border border-gray-300 p-1 rounded-md flex-1"
                 required
@@ -170,9 +204,9 @@ export default function Crud({ loaderData, actionData }: Route.ComponentProps) {
                 type="submit"
                 className="bg-blue-500 text-white p-2 rounded-md text-sm"
               >
-                {editingItem ? "Save Changes" : "Add Item"}
+                {isEditing ? "Save Changes" : "Add Item"}
               </button>
-              {editingItem && (
+              {isEditing && (
                 <button
                   type="button"
                   onClick={handleCancelEdit}

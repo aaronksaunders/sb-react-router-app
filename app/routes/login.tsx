@@ -7,7 +7,13 @@
  * @module login
  */
 
-import { Form, Link, redirect, type MetaFunction } from "react-router";
+import {
+  Form,
+  Link,
+  redirect,
+  useNavigate,
+  type MetaFunction,
+} from "react-router";
 import { Route } from "./+types/login";
 import { getServerClient } from "~/server";
 import { createBrowserClient } from "@supabase/ssr";
@@ -51,45 +57,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 /**
- * Handles the action for user login.
- *
- * @param {Route.ActionArgs} args - The action arguments containing the request.
- * @returns {Promise<{ error?: string }>} An object containing an error message if authentication fails.
- */
-export async function action({ request }: Route.ActionArgs) {
-  let response: Response;
-  try {
-    const formData = await request.formData();
-    const email = formData.get("email");
-    const password = formData.get("password");
-
-    if (!email || !password) {
-      return { error: "Invalid form data" };
-    }
-
-    const sbServerClient = getServerClient(request);
-    const signInResponse = await sbServerClient.auth.signInWithPassword({
-      email: email as string,
-      password: password as string,
-    });
-
-    if (signInResponse.data.user) {
-      return redirect("/home");
-    }
-
-    if ("error" in signInResponse) {
-      return { error: signInResponse.error?.message as string };
-    }
-  } catch (error) {
-    if (error instanceof Error) {
-      return { error: error.message as string };
-    }
-
-    return { error: "An unknown error occurred" };
-  }
-}
-
-/**
  * Login route component.
  * This component provides a form for users to log in to their accounts.
  * It handles authentication and redirects upon successful login.
@@ -101,7 +68,13 @@ export async function action({ request }: Route.ActionArgs) {
 export default function Login({ loaderData }: Route.ComponentProps) {
   const [error, setError] = useState<string | null>(null);
   const { env } = loaderData;
+  const navigate = useNavigate();
 
+  /**
+   * Handles the login form submission.
+   *
+   * @param {React.FormEvent<HTMLFormElement>} event - The form event.
+   */
   const doLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -123,8 +96,8 @@ export default function Login({ loaderData }: Route.ComponentProps) {
     }
 
     if (data.session) {
-      console.log(data.session);
-      redirect("/home");
+      // Redirect to home page on successful login
+      navigate("/home");
     }
   };
 

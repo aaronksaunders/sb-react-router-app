@@ -27,12 +27,12 @@ export async function loader({ request }: Route.LoaderArgs) {
     const userResponse = await sbServerClient.auth.getUser();
 
     if (!userResponse?.data?.user) {
-      return redirect("/login");
+      throw redirect("/login");
     } else {
-      return redirect("/home");
+      throw redirect("/home");
     }
   } catch (error) {
     console.error(error);
-    return redirect("/login");
+    throw redirect("/login");
   }
 }

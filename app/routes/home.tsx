@@ -30,6 +30,7 @@ export async function action({ request }: Route.ActionArgs) {
   try {
     const sbServerClient = getServerClient(request);
     await sbServerClient.auth.signOut();
+
     return redirect("/login");
   } catch (error) {
     console.error(error);
@@ -48,9 +49,11 @@ export async function action({ request }: Route.ActionArgs) {
 export async function loader({ request }: Route.LoaderArgs) {
   const sbServerClient = getServerClient(request);
   const userResponse = await sbServerClient.auth.getUser();
-  console.log(userResponse);
+  if (userResponse.error || !userResponse.data.user) {
+    throw redirect("/login");
+  }
 
-  return { user: userResponse?.data?.user };
+  return { user: userResponse?.data?.user || null };
 }
 
 /**
