@@ -1,6 +1,6 @@
 import type { Route } from "./+types/home";
 import { getServerClient } from "~/server";
-import { Form, Link, redirect } from "react-router";
+import { data, Form, Link, redirect } from "react-router";
 
 /**
  * Meta function for setting the page metadata.
@@ -27,14 +27,18 @@ export function meta({}: Route.MetaArgs) {
  * @returns {Promise<Response>} A redirect response to the login page.
  */
 export async function action({ request }: Route.ActionArgs) {
+	const sbServerClient = getServerClient(request);
+
 	try {
-		const sbServerClient = getServerClient(request);
 		await sbServerClient.client.auth.signOut();
 
 		return redirect("/login", { headers: sbServerClient.headers });
 	} catch (error) {
 		console.error(error);
-		return { error: "Failed to logout" };
+		return data(
+			{ error: "Failed to logout" },
+			{ headers: sbServerClient.headers },
+		);
 	}
 }
 
@@ -53,7 +57,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw redirect("/login", { headers: sbServerClient.headers });
 	}
 
-	return { user: userResponse?.data?.user || null };
+	return data(
+		{
+			user: userResponse?.data?.user || null,
+		},
+		{ headers: sbServerClient.headers },
+	);
 }
 
 /**

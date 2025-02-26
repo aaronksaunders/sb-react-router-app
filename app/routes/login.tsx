@@ -48,12 +48,15 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw redirect("/home", { headers: sbServerClient.headers });
 	}
 
-	return {
-		env: {
-			SUPABASE_URL: process.env.SUPABASE_URL!,
-			SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!,
+	return data(
+		{
+			env: {
+				SUPABASE_URL: process.env.SUPABASE_URL!,
+				SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!,
+			},
 		},
-	};
+		{ headers: sbServerClient.headers },
+	);
 }
 
 /**

@@ -1,4 +1,4 @@
-import { Form, Link } from "react-router";
+import { data, Form, Link } from "react-router";
 import { getServerClient } from "~/server";
 import { Route } from "./+types/crud";
 import { useState, useEffect } from "react";
@@ -17,7 +17,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 	const { data: items, error } = await sbServerClient.client
 		.from("items")
 		.select("*");
-	return { items, error };
+	return data({ items, error }, { headers: sbServerClient.headers });
 };
 
 /**
@@ -30,8 +30,9 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
  * @returns {Promise<{ data: any, error: string | null }>} An object containing the result of the action and any error message.
  */
 export const action = async ({ request }: Route.ActionArgs) => {
+	const sbServerClient = getServerClient(request);
+
 	try {
-		const sbServerClient = getServerClient(request);
 		const formData = await request.formData();
 		const actionType = formData.get("actionType");
 
@@ -52,10 +53,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 			if (error) {
 				console.error("Error adding item:", error); // Debugging log
-				return { error: error.message };
+				return data({ error: error.message });
 			}
 
-			return { data: data?.length > 0 ? data[0] : null };
+			return data(
+				{ data: data?.length > 0 ? data[0] : null },
+				{ headers: sbServerClient.headers },
+			);
 		}
 
 		if (actionType === "editItem") {
@@ -71,10 +75,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 			if (error) {
 				console.error("Error editing item:", error); // Debugging log
-				return { error: error.message };
+				return data({ error: error.message });
 			}
 
-			return { data: data?.length > 0 ? data[0] : null };
+			return data(
+				{ data: data?.length > 0 ? data[0] : null },
+				{ headers: sbServerClient.headers },
+			);
 		}
 
 		if (actionType === "deleteItem") {
@@ -86,16 +93,22 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 			if (error) {
 				console.error("Error deleting item:", error); // Debugging log
-				return { error: error.message };
+				return data({ error: error.message });
 			}
 
-			return { data: null };
+			return data({ data: null }, { headers: sbServerClient.headers });
 		}
 
-		return { data: null, error: "Invalid action type" };
+		return data(
+			{ data: null, error: "Invalid action type" },
+			{ headers: sbServerClient.headers },
+		);
 	} catch (error) {
 		console.error("An error occurred:", error); // Debugging log
-		return { data: null, error: "An error occurred" };
+		return data(
+			{ data: null, error: "An error occurred" },
+			{ headers: sbServerClient.headers },
+		);
 	}
 };
 

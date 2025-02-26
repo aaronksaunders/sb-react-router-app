@@ -40,7 +40,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw redirect("/home", { headers: sbServerClient.headers });
 	}
 
-	return { user: null, error: null };
+	return data({ user: null, error: null }, { headers: sbServerClient.headers });
 }
 
 /**
@@ -66,10 +66,13 @@ export async function action({ request }: Route.ActionArgs) {
 		});
 
 		if (error) {
-			return { error: error.message };
+			return data(
+				{ error: error.message },
+				{ headers: sbServerClient.headers },
+			);
 		}
 
-		return { user: data.user };
+		return data({ user: data.user }, { headers: sbServerClient.headers });
 	} catch (error) {
 		if (error instanceof Error) {
 			return { error: error.message };
