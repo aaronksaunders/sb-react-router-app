@@ -8,10 +8,10 @@ import { getServerClient } from "~/server";
  * @returns {Array<{ title: string, name?: string, content?: string }>} Metadata for the page.
  */
 export const meta: MetaFunction = () => {
-  return [
-    { title: "New React Router Supabase App" },
-    { name: "description", content: "Welcome to React Router with Supabase!" },
-  ];
+	return [
+		{ title: "New React Router Supabase App" },
+		{ name: "description", content: "Welcome to React Router with Supabase!" },
+	];
 };
 
 /**
@@ -22,17 +22,17 @@ export const meta: MetaFunction = () => {
  * @returns {Promise<void>} Redirects to home if the user is logged in.
  */
 export async function loader({ request }: Route.LoaderArgs) {
-  try {
-    const sbServerClient = getServerClient(request);
-    const userResponse = await sbServerClient.auth.getUser();
+	try {
+		const sbServerClient = getServerClient(request);
+		const userResponse = await sbServerClient.client.auth.getUser();
 
-    if (!userResponse?.data?.user) {
-      throw redirect("/login");
-    } else {
-      throw redirect("/home");
-    }
-  } catch (error) {
-    console.error(error);
-    throw redirect("/login");
-  }
+		if (!userResponse?.data?.user) {
+			throw redirect("/login", { headers: sbServerClient.headers });
+		} else {
+			throw redirect("/home", { headers: sbServerClient.headers });
+		}
+	} catch (error) {
+		console.error(error);
+		throw redirect("/login", { headers: {} });
+	}
 }
