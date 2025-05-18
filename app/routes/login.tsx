@@ -10,6 +10,7 @@
 import {
 	Form,
 	Link,
+	data as rdata,
 	redirect,
 	useNavigate,
 	type MetaFunction,
@@ -48,7 +49,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw redirect("/home", { headers: sbServerClient.headers });
 	}
 
-	return data(
+	return rdata(
 		{
 			env: {
 				SUPABASE_URL: process.env.SUPABASE_URL!,
