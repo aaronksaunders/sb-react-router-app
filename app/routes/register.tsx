@@ -7,7 +7,7 @@
  * @module register
  */
 
-import { Form, Link, redirect, type MetaFunction } from "react-router";
+import { Form, Link, data as rdata, redirect, type MetaFunction } from "react-router";
 import { Route } from "./+types/login";
 import { getServerClient } from "~/server";
 
@@ -40,7 +40,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw redirect("/home", { headers: sbServerClient.headers });
 	}
 
-	return data({ user: null, error: null }, { headers: sbServerClient.headers });
+	return rdata({ user: null, error: null }, { headers: sbServerClient.headers });
 }
 
 /**
@@ -66,13 +66,13 @@ export async function action({ request }: Route.ActionArgs) {
 		});
 
 		if (error) {
-			return data(
+			return rdata(
 				{ error: error.message },
 				{ headers: sbServerClient.headers },
 			);
 		}
 
-		return data({ user: data.user }, { headers: sbServerClient.headers });
+		return rdata({ user: data.user }, { headers: sbServerClient.headers });
 	} catch (error) {
 		if (error instanceof Error) {
 			return { error: error.message };
