@@ -1,4 +1,4 @@
-import { data, Form, Link } from "react-router";
+import { data as rdata, Form, Link } from "react-router";
 import { getServerClient } from "~/server";
 import { Route } from "./+types/crud";
 import { useState, useEffect } from "react";
@@ -17,7 +17,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 	const { data: items, error } = await sbServerClient.client
 		.from("items")
 		.select("*");
-	return data({ items, error }, { headers: sbServerClient.headers });
+	return rdata({ items, error }, { headers: sbServerClient.headers });
 };
 
 /**
@@ -53,10 +53,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 			if (error) {
 				console.error("Error adding item:", error); // Debugging log
-				return data({ error: error.message });
+				return rdata({ error: error.message });
 			}
 
-			return data(
+			return rdata(
 				{ data: data?.length > 0 ? data[0] : null },
 				{ headers: sbServerClient.headers },
 			);
@@ -75,10 +75,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 			if (error) {
 				console.error("Error editing item:", error); // Debugging log
-				return data({ error: error.message });
+				return rdata({ error: error.message });
 			}
 
-			return data(
+			return rdata(
 				{ data: data?.length > 0 ? data[0] : null },
 				{ headers: sbServerClient.headers },
 			);
@@ -93,19 +93,19 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
 			if (error) {
 				console.error("Error deleting item:", error); // Debugging log
-				return data({ error: error.message });
+				return rdata({ error: error.message });
 			}
 
-			return data({ data: null }, { headers: sbServerClient.headers });
+			return rdata({ data: null }, { headers: sbServerClient.headers });
 		}
 
-		return data(
+		return rdata(
 			{ data: null, error: "Invalid action type" },
 			{ headers: sbServerClient.headers },
 		);
 	} catch (error) {
 		console.error("An error occurred:", error); // Debugging log
-		return data(
+		return rdata(
 			{ data: null, error: "An error occurred" },
 			{ headers: sbServerClient.headers },
 		);
@@ -138,7 +138,7 @@ export default function Crud({ loaderData, actionData }: Route.ComponentProps) {
 
 	// Effect to reset the form when actionData changes
 	useEffect(() => {
-		if (actionData && !actionData.error) {
+		if (actionData && !error) {
 			// Reset the current item if the action was successful
 			setCurrentItem(null);
 			setIsEditing(false); // Reset edit mode
