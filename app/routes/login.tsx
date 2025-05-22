@@ -10,14 +10,12 @@
 import {
 	Form,
 	Link,
+	data as rdata,
 	redirect,
-	useNavigate,
 	type MetaFunction,
 } from "react-router";
 import { Route } from "./+types/login";
 import { getServerClient } from "~/server";
-import { createBrowserClient } from "@supabase/ssr";
-import { useState } from "react";
 
 /**
  * Meta function for setting the page metadata.
@@ -41,22 +39,42 @@ export const meta: MetaFunction = () => {
  * @returns {Promise<void>} Redirects to home if the user is logged in.
  */
 export async function loader({ request }: Route.LoaderArgs) {
+	// Check if the user is already logged in
 	const sbServerClient = getServerClient(request);
 	const userResponse = await sbServerClient.client.auth.getUser();
-
 	if (userResponse?.data?.user) {
 		throw redirect("/home", { headers: sbServerClient.headers });
 	}
 
-	return data(
-		{
-			env: {
-				SUPABASE_URL: process.env.SUPABASE_URL!,
-				SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!,
-			},
-		},
-		{ headers: sbServerClient.headers },
-	);
+	return rdata({ user: null, error: null }, { headers: sbServerClient.headers });
+}
+
+export async function action({ request }: Route.ActionArgs) {
+	try {
+		const formData = await request.formData();
+		const dataFields = Object.fromEntries(formData.entries());
+
+		const sbServerClient = getServerClient(request);
+		const { data, error } = await sbServerClient.client.auth.signInWithPassword({
+			email: dataFields.email as string,
+			password: dataFields.password as string,
+		});
+
+		if (error) {
+			return rdata(
+				{ error: error.message },
+				{ headers: sbServerClient.headers },
+			);
+		}
+
+		return redirect("/home", { headers: sbServerClient.headers });
+	} catch (error) {
+		if (error instanceof Error) {
+			return { error: error.message };
+		}
+
+		return { error: "An unknown error occurred" };
+	}
 }
 
 /**
@@ -68,46 +86,15 @@ export async function loader({ request }: Route.LoaderArgs) {
  * @param {Object} props.loaderData - Data returned from the loader function.
  * @returns {JSX.Element} The rendered login form component.
  */
-export default function Login({ loaderData }: Route.ComponentProps) {
-	const [error, setError] = useState<string | null>(null);
-	const { env } = loaderData;
-	const navigate = useNavigate();
-
-	/**
-	 * Handles the login form submission.
-	 *
-	 * @param {React.FormEvent<HTMLFormElement>} event - The form event.
-	 */
-	const doLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		const formData = new FormData(event.currentTarget);
-		const dataFields = Object.fromEntries(formData.entries());
-
-		const supabase = createBrowserClient(
-			env.SUPABASE_URL,
-			env.SUPABASE_ANON_KEY,
-		);
-		const { data, error } = await supabase.auth.signInWithPassword({
-			email: dataFields.email as string,
-			password: dataFields.password as string,
-		});
-
-		if (error) {
-			console.log(error);
-			setError(error.message);
-			return;
-		}
-
-		if (data.session) {
-			// Redirect to home page on successful login
-			navigate("/home");
-		}
-	};
+export default function Login({ actionData }: Route.ComponentProps) {
+	const error = actionData
+		? (actionData as { error: string | null })?.error
+		: null;
 
 	return (
 		<div className="p-8 min-w-3/4 w-[500px] mx-auto">
 			<h1 className="text-2xl">React Router v7 Supabase Auth: Login</h1>
-			<Form method="post" className="mt-6 " onSubmit={doLogin}>
+			<Form method="post" className="mt-6">
 				<div className="flex flex-col gap-2">
 					<div className="flex flex-row">
 						<label htmlFor="email" className="min-w-24 ">
